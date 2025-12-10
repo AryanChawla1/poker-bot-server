@@ -1,8 +1,8 @@
+from __future__ import annotations
+from functools import total_ordering
+
 from suit import Suit
 from rank import Rank
-
-from functools import total_ordering
-from __future__ import annotations
 
 @total_ordering
 class Card:
@@ -23,3 +23,9 @@ class Card:
     
     def __eq__(self, other: Card) -> bool:
         return self.rank == other.rank
+
+    def __repr__(self) -> str:
+        return f"{self.__rank.name} of {self.__suit.name}"
+
+    def __str__(self) -> str:
+        return f"{self.__rank.name} of {self.__suit.name}"

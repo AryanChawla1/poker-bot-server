@@ -16,5 +16,5 @@ Activate Virtual Environment (Windows):
 To generate `requirements.txt`:
 ```
 pip install pipreqs
-pipreqs .
+pipreqs . --force
 ```
