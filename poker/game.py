@@ -1,9 +1,14 @@
-from typing import List
+from typing import List, Tuple
 from enum import Enum
 
 from player import Player
 from deck import Deck
 from card import Card
+
+BANKROLL = 100
+NUM_PLAYERS = 5
+SMALL_BLIND = 1
+BIG_BLIND = 2
 
 class State(Enum):
     FOLD = 0 # no action
@@ -11,9 +16,9 @@ class State(Enum):
     CALLED = 2 # no action, but can receive action if raised
     RAISED = 3 # no action, but can receive action if re-raised
     NEED_ACTION = 4 # fold, call, raise
-    LAST = 5 # fold, check, raise (pre-flop this is big blind, otherwise button)
 
-#TODO: Poker hand Evaluator, Hand End Logic, Minimum Raise Logic, Flop -> River
+#TODO: Poker hand Evaluator, Testing
+# NOTE: These nested functions will have a changed design when not local, should fix
 
 class Game:
     def __init__(self, buy_in: int, num_players: int, small_blind: int, big_blind: int):
@@ -22,13 +27,14 @@ class Game:
         self.__button: int = 0
         self.__small_blind: int = small_blind
         self.__big_blind: int = big_blind
+        self.__deck = Deck()
 
     @property
     def num_players(self) -> int:
         return self.__num_players
 
     def play_hand(self):
-        deck = Deck()
+        self.__deck.shuffle()
         pot = [0] * self.__num_players
         state = [State.NEED_ACTION] * self.__num_players
         call = self.__big_blind
@@ -47,29 +53,27 @@ class Game:
                 pot[index] += value
                 if value < self.__big_blind:
                     state[index] = State.ALL_IN
-                else:
-                    state[index] = State.LAST
-            player.hole_cards = [deck.draw(), deck.draw()]
+            player.hole_cards = [self.__deck.draw(), self.__deck.draw()]
         
-        def get_action(big_blind: bool):
-            nonlocal call
-            input_string = f"Enter action: [f] fold [c] check [r] raise" if big_blind else f"Enter action: [f] fold [c] call {call} [r] raise"
+        # get user input
+        def get_action(call: int, index: int) -> int:
+            required_bet = min(call - pot[index], self.__players[index].bankroll) # this calculates the call
+            input_string = f"Enter action: [f] fold [c] check [r] raise" if required_bet == 0 else f"Enter action: [f] fold [c] call {required_bet} [r] raise"
             action = input(input_string)
             match action:
                 case 'c':
-                    if big_blind:
+                    if required_bet == 0:
                         state[index] = State.CALLED
                         return
-                    value = player.bet(call)
+                    value = player.bet(required_bet)
                     pot[index] += value
                     if value < call:
                         state[index] = State.ALL_IN
                     else:
                         state[index] = State.CALLED
                 case 'r':
-                    value = input(f"What is raise? Minimum is {call}")
-                    value = int(value)
-                    call = value
+                    value = input(f"How much are you raising it by? Minimum is {required_bet}")
+                    call += int(value)
                     for i in range(len(state)):
                         if state[i].value > 1:
                             state[i] = State.NEED_ACTION
@@ -80,41 +84,82 @@ class Game:
                         state[index] = State.RAISED
                 case _:
                     state[index] = State.FOLD
+            return call
+
+        # simulate betting
+        def betting(call: int, offset: int) -> Tuple[int]:
+            while any(s.value > 2 for s in state):
+                for i in range(self.__num_players):
+                    index = (i + self.__button + offset) % self.__num_players
+                    player = self.__players[index]
+                    if sum(s.value == 0 for s in state) == self.__num_players - 1:
+                        return (call, index)
+                    if state[index].value < 3:
+                        continue
+                    if state[index] == State.RAISED:
+                        state[index] = State.CALLED # previous raise is now called
+                        continue
+
+                    print(player)
+                    print("Current Pot is: ", pot)
+                    call = get_action(call, index)
+            return (call, -1)
+
+        def score(cards):
+            pass
+
+        def end(unanimous: bool):
+            def get_winner_money(winner=winner):
+                # use winner index to distribute wealth
+                winner_pot = pot[winner]
+                winner_payout = 0
+                for i, p in enumerate(pot):
+                    stake = min(p, winner_pot)
+                    pot[i] -= stake
+                    winner_payout += stake
+                self.__players[winner].win_the_pot(winner_payout)
+            if not unanimous:
+                # score every players cards and then sort their indices in descending order
+                winners: List[int] = [i for i in range(len(self.__players)) if state[i].value != 0]
+                winners.sort(reverse=True, key= lambda x: score(community + self.__players[x].hole_cards))
+                index = 0
+                # for every winner, subtract their pot and continue until no money left
+                while index < len(winners) and pot.count(0) != self.__num_players:
+                    get_winner_money(winners[index])
+                    index += 1
+            else:
+                get_winner_money()
+            self.__button = (self.__button + 1) % self.__num_players
+            self.__players = [p for p in self.__players if p.bankroll > 0]
+            self.__num_players = len(self.__players)
 
         # pre_flop
-        while all(s.value < 3 for s in state):
-            for i in range(self.__num_players):
-                index = (i + self.__button + 3) % self.__num_players
-                player = self.__players[index]
-                if state[index].value < 3:
-                    continue
-                if state[index] == State.RAISED:
-                    state[index] = State.CALLED # previous raise is now called
-                    continue
-
-                print(player)
-                print("Current Pot is: ", pot)
-                get_action(state[index] == State.LAST)
-        deck.draw()
-        community = [deck.draw(), deck.draw(), deck.draw()]
+        winner: int
+        call, winner = betting(call, 3)
+        if winner != -1:
+            end(True)
+        self.__deck.draw()
+        community = [self.__deck.draw(), self.__deck.draw(), self.__deck.draw()]
 
         ## flop
+        call, winner = betting(call, 1)
+        if winner != -1:
+            end(True)
+        self.__deck.draw()
+        community.append(self.__deck.draw())
 
         ## turn
+        call, winner = betting(call, 1)
+        if winner != -1:
+            end(True)
+        self.__deck.draw()
+        community.append(self.__deck.draw())
 
         ## river
-
-        # end (give money)
-        self.__button = (self.__button + 1) % self.__num_players
-        for player in self.__players:
-            player.folded = False
-            player.all_in = False
-            if player.bankroll == 0:
-                self.__players.remove(player)
-                self.__num_players -= 1
-
+        call, winner = betting(call, 1)
+        end(winner == -1)
 
 if __name__ == "__main__":
-    game = Game(100, 5, 1, 2)
+    game = Game(BANKROLL, NUM_PLAYERS, SMALL_BLIND, BIG_BLIND)
     while game.num_players > 1:
         game.play_hand()
