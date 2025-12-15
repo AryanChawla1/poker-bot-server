@@ -29,3 +29,6 @@ class Card:
 
     def __str__(self) -> str:
         return f"{self.__rank.name} of {self.__suit.name}"
+
+    def __hash__(self):
+        return self.__suit * 13 + self.__rank
