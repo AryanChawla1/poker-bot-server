@@ -1,5 +1,6 @@
 from typing import List, Tuple
 from enum import Enum
+from random import randint
 
 from player import Player
 from deck import Deck
@@ -17,8 +18,8 @@ class State(Enum):
     RAISED = 3 # no action, but can receive action if re-raised
     NEED_ACTION = 4 # fold, call, raise
 
-#TODO: Poker hand Evaluator, Testing
-# NOTE: These nested functions will have a changed design when not local, should fix
+#TODO: Poker hand Evaluator, Testing, No betting if all in's (why ask action if everyone or everyone - 1 all in)
+#TODO: Convert into GameState object for easy access
 
 class Game:
     def __init__(self, buy_in: int, num_players: int, small_blind: int, big_blind: int):
@@ -34,6 +35,7 @@ class Game:
         return self.__num_players
 
     def play_hand(self):
+        print("\n===== NEW HAND =====\n")
         self.__deck.shuffle()
         pot = [0] * self.__num_players
         state = [State.NEED_ACTION] * self.__num_players
@@ -57,14 +59,15 @@ class Game:
         
         # get user input
         def get_action(call: int, index: int) -> int:
-            required_bet = min(call - pot[index], self.__players[index].bankroll) # this calculates the call
-            input_string = f"Enter action: [f] fold [c] check [r] raise" if required_bet == 0 else f"Enter action: [f] fold [c] call {required_bet} [r] raise"
+            player = self.__players[index]
+            required_bet = min(call - pot[index], player.bankroll) # this calculates the call
+            input_string = f"Enter action: [f] fold [c] check [r] raise\n" if required_bet == 0 else f"Enter action: [f] fold [c] call {required_bet} [r] raise\n"
             action = input(input_string)
             match action:
                 case 'c':
                     if required_bet == 0:
                         state[index] = State.CALLED
-                        return
+                        return call
                     value = player.bet(required_bet)
                     pot[index] += value
                     if value < call:
@@ -72,13 +75,14 @@ class Game:
                     else:
                         state[index] = State.CALLED
                 case 'r':
-                    value = input(f"How much are you raising it by? Minimum is {required_bet}")
+                    value = input(f"How much are you raising it by? Minimum is {required_bet}\n")
+                    # needs validation
                     call += int(value)
                     for i in range(len(state)):
                         if state[i].value > 1:
                             state[i] = State.NEED_ACTION
-                    pot[index] += value
-                    if value < call:
+                    pot[index] = call
+                    if player.bankroll == 0:
                         state[index] = State.ALL_IN
                     else:
                         state[index] = State.RAISED
@@ -106,7 +110,7 @@ class Game:
             return (call, -1)
 
         def score(cards):
-            pass
+            return randint(1, 5)
 
         def end(unanimous: bool):
             def get_winner_money(winner=winner):
@@ -117,6 +121,7 @@ class Game:
                     stake = min(p, winner_pot)
                     pot[i] -= stake
                     winner_payout += stake
+                print(str(self.__players[winner]) + " won $" + str(winner_payout))
                 self.__players[winner].win_the_pot(winner_payout)
             if not unanimous:
                 # score every players cards and then sort their indices in descending order
@@ -134,30 +139,41 @@ class Game:
             self.__num_players = len(self.__players)
 
         # pre_flop
+        print("\n===== PRE-FLOP =====\n")
         winner: int
         call, winner = betting(call, 3)
         if winner != -1:
-            end(True)
+            return end(True)
         self.__deck.draw()
         community = [self.__deck.draw(), self.__deck.draw(), self.__deck.draw()]
+        print(community)
+        state = [State.NEED_ACTION] * self.__num_players
 
+
+        print("\n===== FLOP =====\n")
         ## flop
         call, winner = betting(call, 1)
         if winner != -1:
-            end(True)
+            return end(True)
         self.__deck.draw()
         community.append(self.__deck.draw())
+        print(community)
+        state = [State.NEED_ACTION] * self.__num_players
 
+        print("\n===== TURN =====\n")
         ## turn
         call, winner = betting(call, 1)
         if winner != -1:
-            end(True)
+            return end(True)
         self.__deck.draw()
         community.append(self.__deck.draw())
+        print(community)
+        state = [State.NEED_ACTION] * self.__num_players
 
+        print("\n===== RIVER =====\n")
         ## river
         call, winner = betting(call, 1)
-        end(winner == -1)
+        return end(winner == -1)
 
 if __name__ == "__main__":
     game = Game(BANKROLL, NUM_PLAYERS, SMALL_BLIND, BIG_BLIND)
