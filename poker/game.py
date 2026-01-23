@@ -18,7 +18,7 @@ class State(Enum):
     RAISED = 3 # no action, but can receive action if re-raised
     NEED_ACTION = 4 # fold, call, raise
 
-#TODO: Poker hand Evaluator, Testing, No betting if all in's (why ask action if everyone or everyone - 1 all in)
+#TODO: Testing, No betting if all in's (why ask action if everyone or everyone - 1 all in), raising validation
 #TODO: Convert into GameState object for easy access
 
 class Game:
