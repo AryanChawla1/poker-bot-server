@@ -18,3 +18,4 @@ class Deck:
 
     def shuffle(self):
         shuffle(self.__cards)
+        self.__index = 0

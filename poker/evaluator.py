@@ -1,8 +1,11 @@
+from itertools import combinations
+
 from encoder import Encoder
 from generator import generate_lookup
 from card import Card
 from rank import Rank
 from suit import Suit
+
 
 STRAIGHT_FLUSH_LOOKUP, FLUSH_LOOKUP, STRAIGHT_LOOKUP, PRODUCT_LOOKUP = generate_lookup()
 
@@ -42,6 +45,14 @@ def evaluate_5(cards):
     # All others
     return PRODUCT_LOOKUP[prime_product]
 
+
+def evaluate_7(cards):
+    assert len(cards) == 7
+    best = float("inf")
+    for combo in combinations(cards, 5):
+        rank = evaluate_5(combo)
+        best = min(best, rank)
+    return best
 
 if __name__ == "__main__":
     # Royal flush (best possible hand)
