@@ -12,6 +12,10 @@ Activate Virtual Environment (Windows):
 ```
 .venv\Scripts\activate
 ```
+Might need to run this for imports
+```
+pip install -e .
+```
 
 To generate `requirements.txt`:
 ```

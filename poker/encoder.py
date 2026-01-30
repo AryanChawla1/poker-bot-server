@@ -1,6 +1,6 @@
-from card import Card
-from suit import Suit
-from rank import Rank
+from poker.card import Card
+from poker.suit import Suit
+from poker.rank import Rank
 
 SUIT_MAPPING = {
     Suit.CLUBS: 0b0001,

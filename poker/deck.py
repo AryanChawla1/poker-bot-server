@@ -1,9 +1,9 @@
 from random import shuffle
 from typing import List
 
-from card import Card
-from rank import Rank
-from suit import Suit
+from poker.card import Card
+from poker.rank import Rank
+from poker.suit import Suit
 
 class Deck:
     def __init__(self):

@@ -3,10 +3,10 @@ from enum import Enum
 from random import randint
 from dataclasses import dataclass
 
-from player import Player
-from deck import Deck
-from card import Card
-from evaluator import evaluate_7
+from poker.player import Player
+from poker.deck import Deck
+from poker.card import Card
+from poker.evaluator import evaluate_7
 
 # TODO Skip if everyone all-in
 

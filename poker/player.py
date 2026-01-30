@@ -1,6 +1,6 @@
 from typing import List
 
-from card import Card
+from poker.card import Card
 
 class Player:
     def __init__(self, name: str, buy_in: int):

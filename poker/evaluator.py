@@ -1,10 +1,10 @@
 from itertools import combinations
 
-from encoder import Encoder
-from generator import generate_lookup
-from card import Card
-from rank import Rank
-from suit import Suit
+from poker.encoder import Encoder
+from poker.generator import generate_lookup
+from poker.card import Card
+from poker.rank import Rank
+from poker.suit import Suit
 
 
 STRAIGHT_FLUSH_LOOKUP, FLUSH_LOOKUP, STRAIGHT_LOOKUP, PRODUCT_LOOKUP = generate_lookup()

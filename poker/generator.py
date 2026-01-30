@@ -1,5 +1,6 @@
 from itertools import combinations
-from encoder import PRIMES
+
+from poker.encoder import PRIMES
 
 STRAIGHT_MASKS = [
     0x1F00, 0x0F80, 0x07C0, 0x03E0, 0x01F0,

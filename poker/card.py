@@ -1,8 +1,8 @@
 from __future__ import annotations
 from functools import total_ordering
 
-from suit import Suit
-from rank import Rank
+from poker.suit import Suit
+from poker.rank import Rank
 
 @total_ordering
 class Card:
